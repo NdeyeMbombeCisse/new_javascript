@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulaire d'Ajout d'Idees</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .container {
+            display: flex;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .container img {
+            width: 250px;
+            margin-left: 80px;
+        }
+
+        .mb-3 {
+            margin-bottom: 1rem;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            display: flex;
+        }
+
+        #categorie_input {
+            margin-left: 40px;
+            width: 300px;
+            height: 50px;
+        }
+
+        #libelle_input {
+            width: 300px;
+            height: 50px;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            margin-top: 200px;
+            font-size: 20px;
+        }
+
+        form {
+            margin-top: 50px;
+            margin-left: 110px;
+        }
+
+        #submit_btn {
+            background-color: #ce0033;
+        }
+
+        .list_idee {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .une_idee {
+            /* border: 1px solid black; */
+            gap: 20px;
+            column-gap: 20px;
+            margin-top: 130px;
+            border-radius: 3px;
+            margin-left: 40px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .une_idee h5 {
+            margin-top: 20px;
+            margin-left: 20px;
+        }
+
+        .une_idee i {
+            margin-left: 20px;
+        }
+
+        .une_idee button {
+            margin-left: 20px;
+            border-radius: 3px;
+            background-color: #ce0033;
+            color: white;
+            border: 1px solid blue;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 class="text-center" style="color: #ce0033; margin-bottom: 50px;">Formulaire d'Ajout d'Idees</h1>
+    <div class="container" id="mon_contenu">
+        <form action="" method="post" id="mon_formulaire">
+            <div class="section">
+                <div class="mb-3">
+                    <label for="libelle">Entrez le libelle de l'idée</label>
+                    <input type="text" name="libelle_input" id="libelle_input" class="form-control">
+                    <span id="error"></span>
+                </div>
+                <div class="mb-3">
+                    <label for="categorie">Choisissez la catégorie de l'idée</label>
+                    <select name="categorie_input" id="categorie_input" class="form-control">
+                        <option value="politique">Politique</option>
+                        <option value="sport">Sport</option>
+                        <option value="sante">Santé</option>
+                        <option value="education">Éducation</option>
+                    </select>
+                    <span id="error_categorie"></span>
+                </div>
+            </div>
+            <div class="form-section">
+                <div class="mb-3">
+                    <label for="description">Entrez la description du libelle</label>
+                    <textarea name="desc_input" id="desc_input" class="form-control"></textarea>
+                    <span id="error_desc"></span>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" id="submit_btn">Soumettre</button>
+        </form>
+        <img src="image 54.png" alt="">
+    </div>
+    <div id="success_message" class="hidden">
+        <p>Formulaire rempli avec succès !</p>
+    </div>
+    <div class="list_idee">
+        <div class="une_idee row-col-card" id="une_idee" class="hidden"></div>
+    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+        import { getDatabase, ref, set, push, get, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBsAMQCeNfe8yYsz-iPETXtYuXz9wKq_9s",
+            authDomain: "mbombejs.firebaseapp.com",
+            projectId: "mbombejs",
+            storageBucket: "mbombejs.appspot.com",
+            messagingSenderId: "413859556804",
+            appId: "1:413859556804:web:32f9756a8f9f2b7da18891",
+            measurementId: "G-ZYYFE9GNWG",
+            databaseURL: "https://mbombejs-default-rtdb.firebaseio.com/"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+
+
+
+
+        const ideeContainer = document.getElementById("une_idee");
+
+        onValue(ref(db, 'idees'), (snapshot) => {
+            ideeContainer.innerHTML = "";
+
+            snapshot.forEach((childSnapshot) => {
+                const idee = childSnapshot.val();
+                const ideeElement = document.createElement("div");
+                ideeElement.classList.add("card", "mb-3");
+                ideeElement.innerHTML = `
+            <div class="card-body">
+                <h5 class="card-title">${idee.libelle}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">${idee.categorie}</h6>
+                <p class="card-text">${idee.description}</p>
+                <button class="btn btn-danger btn-sm delete-button" data-idee-id="${childSnapshot.key}">Supprimer</button>
+                <button class="btn btn-primary btn-sm update-button" data-idee-id="${childSnapshot.key}">Modifier</button>
+               <button class="btn btn-success btn-sm approve-button" data-idee-id="${childSnapshot.key}">Approuver</button>
+                <button class="btn btn-danger btn-sm disapprove-button" data-idee-id="${childSnapshot.key}" style="display: none;">Désapprouver</button>
+
+
+            </div>
+        `;
+                ideeContainer.appendChild(ideeElement);
+
+                // Ajouter un gestionnaire d'événements pour chaque bouton de suppression créé
+                const deleteButton = ideeElement.querySelector('.delete-button');
+                deleteButton.addEventListener('click', () => {
+                    const ideeId = deleteButton.getAttribute('data-idee-id');
+                    removeIdee(ideeId);
+                });
+
+                const updateButtons = document.querySelectorAll('.update-button');
+                updateButtons.forEach(updateButton => {
+                    updateButton.addEventListener('click', () => {
+                        const ideeId = updateButton.getAttribute('data-idee-id');
+                        modifierIdee(ideeId);
+                    });
+                });
+
+
+
+                
+
+
+            });
+
+            // modification
+
+            const updateButton = ideeElement.querySelector('.update-button');
+            updateButton.addEventListener('click', () => {
+                const ideeId = updateButton.getAttribute('data-idee-id');
+                modifierIdee(ideeId);
+            });
+        });
+
+        function removeIdee(ideeId) {
+            const ideeRef = ref(db, `idees/${ideeId}`);
+            remove(ideeRef)
+                .then(() => {
+                    console.log(`Idée avec l'ID ${ideeId} supprimée avec succès.`);
+                })
+                .catch((error) => {
+                    console.error(`Erreur lors de la suppression de l'idée : ${error}`);
+                });
+
+
+        }
+
+        function modifierIdee(ideeId) {
+            const ideeRef = ref(db, `idees/${ideeId}`);
+
+            // Récupérer les données actuelles depuis Firebase pour pré-remplir le formulaire de modification
+            get(ideeRef)
+                .then((snapshot) => {
+                    const idee = snapshot.val();
+                    // Pré-remplir le formulaire avec les données actuelles
+                    document.getElementById("libelle_input").value = idee.libelle;
+                    document.getElementById("categorie_input").value = idee.categorie;
+                    document.getElementById("desc_input").value = idee.description;
+
+                    // Ajouter un gestionnaire d'événements pour le formulaire de modification
+                    const submitBtn = document.getElementById("submit_btn");
+
+                    // Ajouter un nouvel écouteur d'événement pour la soumission du formulaire
+                    submitBtn.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        const newLibelle = document.getElementById("libelle_input").value.trim();
+                        const newCategorie = document.getElementById("categorie_input").value.trim();
+                        const newDescription = document.getElementById("desc_input").value.trim();
+
+                        // Mettre à jour les données dans Firebase
+                        update(ideeRef, {
+                            libelle: newLibelle,
+                            categorie: newCategorie,
+                            description: newDescription,
+                        })
+                            .then(() => {
+                                alert("Idée modifiée avec succès");
+                                document.getElementById('mon_formulaire').reset();
+                            })
+                            .catch((error) => {
+                                console.error("Erreur lors de la modification de l'idée : ", error);
+                            });
+                    });
+                })
+                .catch((error) => {
+                    console.error(`Erreur lors de la récupération des données de l'idée : ${error}`);
+                });
+        }
+
+        // Gestion de l'affichage des données
+        const submitBtn = document.getElementById("submit_btn");
+        submitBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            const libelle = document.getElementById("libelle_input").value.trim();
+            const categorie = document.getElementById("categorie_input").value.trim();
+            const description = document.getElementById("desc_input").value.trim();
+
+            // Ajouter une nouvelle idée dans Firebase
+            push(ref(db, 'idees'), {
+                libelle: libelle,
+                categorie: categorie,
+                description: description,
+                aprover:false,
+
+            })
+                .then(() => {
+                    alert("Idée ajoutée avec succès");
+                    document.getElementById('mon_formulaire').reset(); // Réinitialiser le formulaire après soumission
+                })
+                .catch((error) => {
+                    console.error("Erreur lors de l'ajout de l'idée : ", error);
+                });
+        });
+    </script>
+
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+
+</html>
