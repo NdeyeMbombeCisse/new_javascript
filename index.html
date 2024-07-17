@@ -64,7 +64,6 @@
         }
 
         .une_idee {
-            /* border: 1px solid black; */
             gap: 20px;
             column-gap: 20px;
             margin-top: 130px;
@@ -94,6 +93,14 @@
 
         .hidden {
             display: none;
+        }
+
+        .approved {
+            border: 2px solid green;
+        }
+
+        .disapproved {
+            border: 2px solid red;
         }
     </style>
 </head>
@@ -155,10 +162,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-
-
-
-
         const ideeContainer = document.getElementById("une_idee");
 
         onValue(ref(db, 'idees'), (snapshot) => {
@@ -168,19 +171,18 @@
                 const idee = childSnapshot.val();
                 const ideeElement = document.createElement("div");
                 ideeElement.classList.add("card", "mb-3");
+                ideeElement.setAttribute('data-idee-id', childSnapshot.key);
                 ideeElement.innerHTML = `
-            <div class="card-body">
-                <h5 class="card-title">${idee.libelle}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">${idee.categorie}</h6>
-                <p class="card-text">${idee.description}</p>
-                <button class="btn btn-danger btn-sm delete-button" data-idee-id="${childSnapshot.key}">Supprimer</button>
-                <button class="btn btn-primary btn-sm update-button" data-idee-id="${childSnapshot.key}">Modifier</button>
-               <button class="btn btn-success btn-sm approve-button" data-idee-id="${childSnapshot.key}">Approuver</button>
-                <button class="btn btn-danger btn-sm disapprove-button" data-idee-id="${childSnapshot.key}" style="display: none;">Désapprouver</button>
-
-
-            </div>
-        `;
+                    <div class="card-body">
+                        <h5 class="card-title">${idee.libelle}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">${idee.categorie}</h6>
+                        <p class="card-text">${idee.description}</p>
+                        <button class="btn btn-danger btn-sm delete-button" data-idee-id="${childSnapshot.key}">Supprimer</button>
+                        <button class="btn btn-primary btn-sm update-button" data-idee-id="${childSnapshot.key}">Modifier</button>
+                        <button class="btn btn-success btn-sm approve-button" data-idee-id="${childSnapshot.key}">Approuver</button>
+                        <button class="btn btn-danger btn-sm disapprove-button" data-idee-id="${childSnapshot.key}" style="display: none;">Désapprouver</button>
+                    </div>
+                `;
                 ideeContainer.appendChild(ideeElement);
 
                 // Ajouter un gestionnaire d'événements pour chaque bouton de suppression créé
@@ -198,19 +200,27 @@
                     });
                 });
 
+                // Ajouter des gestionnaires d'événements pour les boutons d'approbation et de désapprobation
+                const approveButton = ideeElement.querySelector('.approve-button');
+                const disapproveButton = ideeElement.querySelector('.disapprove-button');
 
+                approveButton.addEventListener('click', () => {
+                    approveIdee(childSnapshot.key);
+                });
 
-                
+                disapproveButton.addEventListener('click', () => {
+                    disapproveIdee(childSnapshot.key);
+                });
 
-
-            });
-
-            // modification
-
-            const updateButton = ideeElement.querySelector('.update-button');
-            updateButton.addEventListener('click', () => {
-                const ideeId = updateButton.getAttribute('data-idee-id');
-                modifierIdee(ideeId);
+                if (idee.approved) {
+                    ideeElement.classList.add('approved');
+                    approveButton.style.display = 'none';
+                    disapproveButton.style.display = 'inline-block';
+                } else {
+                    ideeElement.classList.add('disapproved');
+                    approveButton.style.display = 'inline-block';
+                    disapproveButton.style.display = 'none';
+                }
             });
         });
 
@@ -223,8 +233,6 @@
                 .catch((error) => {
                     console.error(`Erreur lors de la suppression de l'idée : ${error}`);
                 });
-
-
         }
 
         function modifierIdee(ideeId) {
@@ -269,6 +277,38 @@
                 });
         }
 
+        function approveIdee(ideeId) {
+            const ideeRef = ref(db, `idees/${ideeId}`);
+            update(ideeRef, { approved: true })
+                .then(() => {
+                    alert("Idée approuvée avec succès");
+                    const card = document.querySelector(`.card[data-idee-id="${ideeId}"]`);
+                    card.classList.add('approved');
+                    card.classList.remove('disapproved');
+                    card.querySelector('.approve-button').style.display = 'none';
+                    card.querySelector('.disapprove-button').style.display = 'inline-block';
+                })
+                .catch((error) => {
+                    console.error("Erreur lors de l'approbation de l'idée : ", error);
+                });
+        }
+
+        function disapproveIdee(ideeId) {
+            const ideeRef = ref(db, `idees/${ideeId}`);
+            update(ideeRef, { approved: false })
+                .then(() => {
+                    alert("Idée désapprouvée avec succès");
+                    const card = document.querySelector(`.card[data-idee-id="${ideeId}"]`);
+                    card.classList.add('disapproved');
+                    card.classList.remove('approved');
+                    card.querySelector('.disapprove-button').style.display = 'none';
+                    card.querySelector('.approve-button').style.display = 'inline-block';
+                })
+                .catch((error) => {
+                    console.error("Erreur lors de la désapprobation de l'idée : ", error);
+                });
+        }
+
         // Gestion de l'affichage des données
         const submitBtn = document.getElementById("submit_btn");
         submitBtn.addEventListener("click", (e) => {
@@ -282,8 +322,7 @@
                 libelle: libelle,
                 categorie: categorie,
                 description: description,
-                aprover:false,
-
+                approved: false
             })
                 .then(() => {
                     alert("Idée ajoutée avec succès");
